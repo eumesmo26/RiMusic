@@ -75,8 +75,19 @@ object NewPipeUtils {
 
     fun getStreamUrl(format: PlayerResponse.StreamingData.Format, videoId: String): Result<String> =
         runCatching {
-            format.url?.let {
-                return@runCatching it
+            format.url?.let { directUrl ->
+                // PATCH: tambem corrige o parametro "n" (limitador de velocidade) em URLs diretas.
+                // Sem isso o YouTube estrangula a conexao depois de ~30 segundos.
+                // Se a correcao falhar, usa a URL original (mesmo comportamento de antes).
+                return@runCatching try {
+                    YoutubeJavaScriptPlayerManager.getUrlWithThrottlingParameterDeobfuscated(
+                        videoId,
+                        directUrl
+                    )
+                } catch (e: Exception) {
+                    println("NewPipe in Environment getStreamUrl n-param deobfuscation failed: ${e.message}")
+                    directUrl
+                }
             }
             format.signatureCipher.let {
                 if (it == null) throw ParsingException("NewPipe in Environment Could not find format signatureCipher")
