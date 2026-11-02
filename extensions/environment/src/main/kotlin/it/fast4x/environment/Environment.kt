@@ -908,6 +908,11 @@ object Environment {
         webPlayerPot: String?,
     ) = client.post(_cdSL7DrPbA) {
         setLogin(clientType, setLogin = true)
+        if (clientType.clientName == "VISIONOS") {
+            // PATCH: cabecalhos que o cliente VisionOS usa
+            header("Origin", "https://music.youtube.com")
+            header("X-Goog-Visitor-Id", visitorData)
+        }
         setBody(
             PlayerBody(
                 context =
