@@ -49,6 +49,10 @@ data class Context(
             client = Client(
                 clientName = clientName,
                 clientVersion = clientVersion,
+                platform = platform,
+                deviceMake = deviceMake,
+                deviceModel = deviceModel,
+                osName = osName,
                 osVersion = osVersion,
                 gl = locale.gl,
                 hl = locale.hl,
@@ -178,6 +182,22 @@ data class Context(
                 useSignatureTimestamp = true,
                 isEmbedded = true,
                 xClientName = 85
+            )
+        )
+
+        // PATCH: cliente VisionOS (direct audio, sem SABR). Mesmos dados usados pelo Metrolist em 2026.
+        val VISIONOS = Context(
+            Client(
+                clientName = "VISIONOS",
+                clientVersion = "0.1",
+                platform = "MOBILE",
+                userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+                referer = "https://music.youtube.com/",
+                deviceMake = "Apple",
+                deviceModel = "RealityDevice14,1",
+                osName = "VISION_OS",
+                osVersion = "1.3",
+                xClientName = 101
             )
         )
 
