@@ -1,0 +1,32 @@
+name: Gerar APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "corretto"
+          cache: gradle
+
+      - name: Dar permissao ao gradlew
+        run: chmod +x ./gradlew
+
+      - name: Compilar o APK (debug)
+        run: ./gradlew :composeApp:assembleFullDebug --no-daemon --stacktrace
+
+      - name: Enviar o APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: RiMusic-APK
+          path: composeApp/build/outputs/apk/**/*.apk
+          if-no-files-found: error
