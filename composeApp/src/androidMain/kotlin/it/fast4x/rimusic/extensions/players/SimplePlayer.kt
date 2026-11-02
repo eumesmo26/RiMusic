@@ -11,6 +11,7 @@ import it.fast4x.environment.EnvironmentExt
 import it.fast4x.environment.models.Context
 import it.fast4x.environment.models.Context.Companion.DefaultWeb3
 import it.fast4x.environment.models.Context.Companion.TVHTML5_SIMPLY_EMBEDDED_PLAYER
+import it.fast4x.environment.models.Context.Companion.VISIONOS
 import it.fast4x.environment.models.PlayerResponse
 import it.fast4x.environment.utils.NewPipeUtils
 import it.fast4x.rimusic.enums.AudioQualityFormat
@@ -45,9 +46,14 @@ object SimplePlayer {
      * Clients used for fallback streams in case the streams of the main client do not work.
      */
     private val STREAM_FALLBACK_CLIENTS: Array<Context.Client> = arrayOf(
+        VISIONOS.client, // PATCH: indice 0, testado primeiro
         TVHTML5_SIMPLY_EMBEDDED_PLAYER.client,
         DefaultWeb3.client,
     )
+
+    // PATCH: ordem de tentativa: VisionOS (0), depois cliente principal (-1), depois os demais
+    private val STREAM_CLIENT_ORDER: List<Int> =
+        listOf(0, -1) + (1 until STREAM_FALLBACK_CLIENTS.size).toList()
 
 
 
@@ -81,7 +87,7 @@ object SimplePlayer {
         var streamUrl: String? = null
         var streamExpiresInSeconds: Int? = null
         var streamPlayerResponse: PlayerResponse? = null
-        for (clientIndex in (-1 until STREAM_FALLBACK_CLIENTS.size)) {
+        for (clientIndex in STREAM_CLIENT_ORDER) {
             // reset for each client
             format = null
             streamUrl = null
@@ -101,10 +107,12 @@ object SimplePlayer {
                     EnvironmentExt.simplePlayer(videoId, playlistId, client, signatureTimestamp).getOrNull()
             }
             // process current client response
-            if (streamPlayerResponse?.playabilityStatus?.status == "OK") {
+            if (streamPlayerResponse?.playabilityStatus?.status == "OK" ||
+                (clientIndex == 0 && streamPlayerResponse?.streamingData != null)
+            ) {
                 format =
                     findFormat(
-                        streamPlayerResponse,
+                        streamPlayerResponse!!,
                         playedFormat,
                         audioQuality,
                         //connectivityManager,
@@ -125,7 +133,7 @@ object SimplePlayer {
         if (streamPlayerResponse == null) {
             throw Exception("SimplePlayer playerResponseForPlayback Bad stream player response")
         }
-        if (streamPlayerResponse.playabilityStatus?.status != "OK") {
+        if (streamPlayerResponse.playabilityStatus?.status != "OK" && streamUrl == null) {
             throw PlaybackException(
                 streamPlayerResponse.playabilityStatus?.reason,
                 null,
@@ -199,7 +207,7 @@ object SimplePlayer {
         if (streamPlayerResponse == null) {
             throw Exception("playerResponseForPlaybackWithPotoken Bad stream player response")
         }
-        if (streamPlayerResponse.playabilityStatus?.status != "OK") {
+        if (streamPlayerResponse.playabilityStatus?.status != "OK" && streamUrl == null) {
             throw PlaybackException(
                 streamPlayerResponse.playabilityStatus?.reason,
                 null,
@@ -278,7 +286,7 @@ object SimplePlayer {
         var streamExpiresInSeconds: Int? = null
         var streamPlayerResponse: PlayerResponse? = null
         var client: Context.Client
-        for (clientIndex in (-1 until STREAM_FALLBACK_CLIENTS.size)) {
+        for (clientIndex in STREAM_CLIENT_ORDER) {
             // reset for each client
             format = null
             streamUrl = null
@@ -299,10 +307,12 @@ object SimplePlayer {
                     EnvironmentExt.simplePlayer(videoId, playlistId, client, signatureTimestamp, webPlayerPot).getOrNull()
             }
             // process current client response
-            if (streamPlayerResponse?.playabilityStatus?.status == "OK") {
+            if (streamPlayerResponse?.playabilityStatus?.status == "OK" ||
+                (clientIndex == 0 && streamPlayerResponse?.streamingData != null)
+            ) {
                 format =
                     findFormat(
-                        streamPlayerResponse,
+                        streamPlayerResponse!!,
                         playedFormat,
                         audioQuality,
                         //connectivityManager,
@@ -328,7 +338,7 @@ object SimplePlayer {
         if (streamPlayerResponse == null) {
             throw Exception("SimplePlayer playerResponseForPlayback Bad stream player response")
         }
-        if (streamPlayerResponse.playabilityStatus?.status != "OK") {
+        if (streamPlayerResponse.playabilityStatus?.status != "OK" && streamUrl == null) {
             throw PlaybackException(
                 streamPlayerResponse.playabilityStatus?.reason,
                 null,
